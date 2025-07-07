@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Color definitions using ANSI escape codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -59,20 +58,17 @@ install_arch_linux() {
 }
 
 update_arch_mirrors() {
-  info "Updating Arch mirrorlist and package database..."
+  info "Enabling community repo and updating Arch mirrorlist..."
   proot-distro login archlinux -- bash -lc '
     set -euo pipefail
 
+    sed -i "/^\[community\]/,/^Include/s/^#//" /etc/pacman.conf
     sed -i "/^#\[multilib\]/,/^#Include = \/etc\/pacman.d\/mirrorlist/s/^#//" /etc/pacman.conf
     sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
 
     pacman -Syu --noconfirm
 
-    if pacman -Qi reflector &>/dev/null; then
-      echo "[INFO] reflector already installed"
-    else
-      pacman -S --noconfirm reflector
-    fi
+    pacman -S --noconfirm reflector || echo "[WARNING] reflector installation failed"
 
     reflector --country "US,DE,TR,GR" --latest 10 --sort age --protocol https \
       --save /etc/pacman.d/mirrorlist || echo "[WARNING] Mirror optimization failed!"
