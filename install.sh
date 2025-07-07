@@ -1,13 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
-# Betik dizinini al
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+# ---- Yardımcı Fonksiyonlar ----
 info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
 warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; }
 
+# ---- Gerekli Paketler ----
 PACKAGES=(
     tigervnc
     xfce4
@@ -15,6 +14,8 @@ PACKAGES=(
     fish
     starship
 )
+
+# ---- Fonksiyonlar ----
 
 enable_x11_repo() {
     if ! pkg list-all | grep -q xfce4; then
@@ -41,17 +42,17 @@ setup_config_files() {
     info "Dotfiles kopyalanıyor..."
 
     mkdir -p ~/.config/fish
-    cp -f "$SCRIPT_DIR/.config/fish/config.fish" ~/.config/fish/config.fish
+    cp -f .config/fish/config.fish ~/.config/fish/config.fish
 
     mkdir -p ~/.config
-    cp -f "$SCRIPT_DIR/.config/starship.toml" ~/.config/starship.toml
+    cp -f .config/starship.toml ~/.config/starship.toml
 }
 
 setup_vnc() {
     info "VNC xstartup dosyası ayarlanıyor..."
 
     mkdir -p ~/.vnc
-    cp -f "$SCRIPT_DIR/vnc/xstartup" ~/.vnc/xstartup
+    cp -f .vnc/xstartup ~/.vnc/xstartup
     chmod +x ~/.vnc/xstartup
 }
 
@@ -62,6 +63,7 @@ print_final_message() {
     echo -e "\nBağlantı için VNC Viewer'da adres: localhost:5901"
 }
 
+# ---- Ana ----
 main() {
     enable_x11_repo
     install_packages
