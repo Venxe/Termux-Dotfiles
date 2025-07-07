@@ -1,0 +1,12 @@
+# Shell & prompt
+fish
+starship
+
+# Desktop & VNC
+tigervnc
+xfce4
+xfce4-goodies
+
+# File integrations
+gvfs
+dbus
