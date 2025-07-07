@@ -2,8 +2,8 @@
 set -e
 
 # ---- Yardımcı Fonksiyonlar ----
-info() { echo -e "\e[1;32m[INFO]\e[0m $1"; }
-warn() { echo -e "\e[1;33m[WARN]\e[0m $1"; }
+info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
+warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; }
 
 # ---- Gerekli Paketler ----
@@ -15,8 +15,19 @@ PACKAGES=(
     starship
 )
 
+# ---- Fonksiyonlar ----
+
+enable_x11_repo() {
+    if ! pkg list-all | grep -q xfce4; then
+        info "x11-repo etkinleştiriliyor..."
+        pkg install -y x11-repo
+    else
+        info "x11-repo zaten etkin, atlanıyor."
+    fi
+}
+
 install_packages() {
-    info "Gerekli Termux paketleri kuruluyor..."
+    info "Gerekli paketler kuruluyor..."
     pkg update -y
     for pkg in "${PACKAGES[@]}"; do
         if ! command -v "${pkg%% *}" >/dev/null 2>&1; then
@@ -49,11 +60,12 @@ print_final_message() {
     echo -e "\n✅ Kurulum tamamlandı!"
     echo "VNC başlatmak için:"
     echo "  vncserver"
-    echo -e "\nArayüze bağlanmak için VNC Viewer ile localhost:5901 adresini kullanabilirsiniz."
+    echo -e "\nBağlantı için VNC Viewer'da adres: localhost:5901"
 }
 
-# ---- Ana Fonksiyon ----
+# ---- Ana ----
 main() {
+    enable_x11_repo
     install_packages
     setup_config_files
     setup_vnc
