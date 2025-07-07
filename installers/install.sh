@@ -124,7 +124,7 @@ EOF
 
 configure_shell_and_dotfiles() {
   local ROOT
-  ROOT="$(cd "$(dirname "$0")" && pwd)"
+  ROOT="$(cd "$(dirname "$0")"/../.. && pwd)"
   local CFG="${ROOT}/dotcfg/.config"
 
   info "Configuring Fish shell and installing Starship prompt..."
