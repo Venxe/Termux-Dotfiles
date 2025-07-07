@@ -80,10 +80,8 @@ install_arch_packages() {
   [[ -f $pacfile ]] || error_exit "Arch package list not found: $pacfile"
 
   info "Copying Arch package list into Arch root..."
-  cp "$pacfile" "$HOME/" || error_exit "Failed to copy $pacfile into home."
-
-  local filename
-  filename=$(basename "$pacfile")
+  proot-distro login archlinux -- bash -c "cat > /root/pacman-packages.txt" < "$pacfile" \
+    || error_exit "Failed to copy package list into Arch Linux"
 
   info "Installing Arch packages from $pacfile..."
   proot-distro login archlinux -- bash -lc "
@@ -96,7 +94,7 @@ install_arch_packages() {
       else
         pacman -S --needed --noconfirm \$pkg || exit 1
       fi
-    done < /root/${filename}
+    done < /root/pacman-packages.txt
   " || error_exit "Failed to install some Arch packages."
 }
 
