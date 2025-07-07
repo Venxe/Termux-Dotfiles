@@ -100,7 +100,7 @@ install_arch_packages() {
 
 configure_shell_and_dotfiles() {
   local ROOT
-  ROOT="$(cd "$(dirname "$0")" && pwd)"
+  ROOT="$(cd "$(dirname "$0")/../.." && pwd)"  # Adjust root two levels up assuming script in installers/
   local CFG="${ROOT}/dotcfg/.config"
 
   info "Configuring Fish shell and installing Starship prompt..."
