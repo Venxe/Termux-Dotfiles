@@ -51,9 +51,7 @@ install_arch_linux() {
     info "Arch Linux is already installed. Skipping installation."
   else
     info "Installing Arch Linux distribution..."
-    if ! proot-distro install archlinux; then
-      info "Warning: Arch Linux installation may already exist or failed, continuing..."
-    fi
+    proot-distro install archlinux || error_exit "Arch Linux installation failed."
   fi
 }
 
@@ -87,14 +85,7 @@ install_arch_packages() {
   proot-distro login archlinux -- bash -lc "
     set -euo pipefail
     pacman -Sy --noconfirm
-    while read -r pkg; do
-      [[ -z \$pkg || \$pkg =~ ^# ]] && continue
-      if pacman -Qi \$pkg &>/dev/null; then
-        echo \"[INFO] Skipping already-installed: \$pkg\"
-      else
-        pacman -S --needed --noconfirm \$pkg || exit 1
-      fi
-    done < /root/pacman-packages.txt
+    pacman -S --needed --noconfirm - < /root/pacman-packages.txt
   " || error_exit "Failed to install some Arch packages."
 }
 
