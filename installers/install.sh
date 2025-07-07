@@ -16,6 +16,9 @@ error_exit() {
   exit 1
 }
 
+TMP_DIR="${HOME}/.tmp"
+mkdir -p "$TMP_DIR"
+
 update_and_install_termux_pkgs() {
   local pkgfile="installers/packages/pkg-packages.txt"
   [[ -f $pkgfile ]] || error_exit "Termux package list not found: $pkgfile"
@@ -60,7 +63,7 @@ install_arch_linux() {
 update_arch_mirrors() {
   info "Enabling community repo and updating Arch mirrorlist..."
 
-  local TMP_SCRIPT="/tmp/update-mirrors.sh"
+  local TMP_SCRIPT="$TMP_DIR/update-mirrors.sh"
 
   cat > "$TMP_SCRIPT" << 'EOF'
 #!/bin/bash
@@ -96,7 +99,7 @@ install_arch_packages() {
 
   info "Installing Arch packages from $pacfile..."
 
-  local TMP_SCRIPT="/tmp/install-packages.sh"
+  local TMP_SCRIPT="$TMP_DIR/install-packages.sh"
   cat > "$TMP_SCRIPT" << 'EOF'
 #!/bin/bash
 set -euo pipefail
@@ -126,7 +129,7 @@ configure_shell_and_dotfiles() {
 
   info "Configuring Fish shell and installing Starship prompt..."
 
-  local TMP_SCRIPT="/tmp/configure-shell.sh"
+  local TMP_SCRIPT="$TMP_DIR/configure-shell.sh"
   cat > "$TMP_SCRIPT" << 'EOF'
 #!/bin/bash
 set -euo pipefail
@@ -169,7 +172,7 @@ EOF
 start_vnc_server() {
   info "Starting TigerVNC server on display :1..."
 
-  local TMP_SCRIPT="/tmp/start-vnc.sh"
+  local TMP_SCRIPT="$TMP_DIR/start-vnc.sh"
   cat > "$TMP_SCRIPT" << 'EOF'
 #!/bin/bash
 set -euo pipefail
