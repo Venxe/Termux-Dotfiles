@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Color definitions using ANSI escape codes
+# ANSI color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -17,100 +17,86 @@ error_exit() {
   exit 1
 }
 
-# 1) Update Termux pkg and install Termux-level packages (skip if already installed)
 update_and_install_termux_pkgs() {
   local pkgfile="installers/packages/pkg-packages.txt"
-  [[ -f $pkgfile ]] || error_exit "Termux package list not found: $pkgfile"
+  [[ -f $pkgfile ]] || error_exit "Missing: $pkgfile"
 
-  info "Updating Termux package repository..."
-  pkg update -y || error_exit "Failed to update Termux packages."
+  info "Updating Termux packages..."
+  pkg update -y || error_exit "Failed to update pkg list."
 
-  info "Installing Termux packages from $pkgfile..."
+  info "Installing Termux packages..."
   while read -r pkg; do
-    [[ -z $pkg || $pkg =~ ^# ]] && continue
-    if pkg list-installed | grep -qx "$pkg"; then
-      info "Skipping already‑installed pkg: $pkg"
+    [[ -z "$pkg" || "$pkg" =~ ^# ]] && continue
+    if pkg list-installed | grep -q "^$pkg"; then
+      info "Termux pkg already installed: $pkg"
     else
-      info "Installing pkg: $pkg"
-      pkg install -y "$pkg" || error_exit "Failed to install Termux pkg: $pkg"
+      pkg install -y "$pkg" || error_exit "Failed to install pkg: $pkg"
     fi
   done < "$pkgfile"
 }
 
-# 2) Install proot-distro and curl if missing
 setup_proot_distro() {
   for prog in proot-distro curl; do
-    if command -v $prog >/dev/null; then
-      info "Skipping already‑installed: $prog"
-    else
-      info "Installing: $prog"
-      pkg install -y $prog || error_exit "Failed to install Termux pkg: $prog"
+    if ! command -v "$prog" &>/dev/null; then
+      info "Installing missing Termux package: $prog"
+      pkg install -y "$prog" || error_exit "Failed to install: $prog"
     fi
   done
 }
 
-# 3) Install Arch Linux in proot-distro if not already
 install_arch_linux() {
   if proot-distro list | grep -q '^archlinux'; then
-    info "Arch Linux distro already installed, skipping."
+    info "Arch Linux already installed. Skipping."
   else
-    info "Installing Arch Linux distribution..."
-    proot-distro install archlinux || error_exit "Arch Linux installation failed."
+    info "Installing Arch Linux..."
+    proot-distro install archlinux || error_exit "Failed to install Arch Linux."
   fi
 }
 
-# 4) Update mirrors inside Arch and install reflector (skip reinstall)
 update_arch_mirrors() {
-  info "Updating Arch mirrorlist and package database..."
+  info "Updating Arch mirrorlist and system..."
   proot-distro login archlinux -- bash -lc '
     set -euo pipefail
 
     sed -i "/^#\[multilib\]/,/^#Include = \/etc\/pacman.d\/mirrorlist/s/^#//" /etc/pacman.conf
     sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
-
     pacman -Syu --noconfirm
 
-    if pacman -Qi reflector &>/dev/null; then
-      echo "[INFO] reflector already installed"
-    else
+    if ! pacman -Qi reflector &>/dev/null; then
       pacman -S --noconfirm reflector
     fi
 
     reflector --country "US,DE,TR,GR" --latest 10 --sort age --protocol https \
-      --save /etc/pacman.d/mirrorlist || echo "[WARNING] Mirror optimization failed!"
+      --save /etc/pacman.d/mirrorlist || echo "[WARNING] Reflector failed."
   '
 }
 
-# 5) Install Arch packages from list (skip installed)
 install_arch_packages() {
   local pacfile="installers/packages/pacman-packages.txt"
-  [[ -f $pacfile ]] || error_exit "Arch package list not found: $pacfile"
+  [[ -f $pacfile ]] || error_exit "Missing: $pacfile"
 
-  info "Copying Arch package list into Arch root..."
-  cp "$pacfile" "$HOME/" || error_exit "Failed to copy $pacfile into home."
+  cp "$pacfile" "$HOME/" || error_exit "Failed to copy package list into home."
 
-  info "Installing Arch packages from $pacfile..."
+  info "Installing Arch packages..."
   proot-distro login archlinux -- bash -lc "
     set -euo pipefail
-    pacman -Sy --noconfirm
     while read -r pkg; do
-      [[ -z \$pkg || \$pkg =~ ^# ]] && continue
-      if pacman -Qi \$pkg &>/dev/null; then
-        echo \"[INFO] Skipping already‑installed: \$pkg\"
+      [[ -z \"\$pkg\" || \"\$pkg\" =~ ^# ]] && continue
+      if pacman -Qi \"\$pkg\" &>/dev/null; then
+        echo \"[INFO] Already installed: \$pkg\"
       else
-        pacman -S --needed --noconfirm \$pkg || exit 1
+        pacman -S --needed --noconfirm \"\$pkg\" || exit 1
       fi
     done < /root/$(basename "$pacfile")
-  " || error_exit "Failed to install some Arch packages."
+  " || error_exit "One or more Arch packages failed to install."
 }
 
-# 6) Configure shell, prompt, dotfiles and VNC xstartup
 configure_shell_and_dotfiles() {
   local ROOT
   ROOT="$(cd "$(dirname "$0")" && pwd)"
   local CFG="${ROOT}/dotcfg/.config"
 
-  info "Configuring Fish shell and installing Starship prompt..."
+  info "Setting up Fish + Starship inside Arch Linux..."
   proot-distro login archlinux -- bash -lc '
     set -euo pipefail
     if ! grep -qx "/usr/bin/fish" /etc/shells; then
@@ -122,50 +108,46 @@ configure_shell_and_dotfiles() {
     fi
   '
 
-  info "Deploying configuration files to \$HOME..."
+  info "Copying dotfiles..."
   mkdir -p "${HOME}/.config/fish"
   cp "${CFG}/fish/config.fish" "${HOME}/.config/fish/" \
-    || error_exit "Failed to copy Fish config."
+    || error_exit "Failed to copy fish config."
 
-  mkdir -p "${HOME}/.config"
   cp "${CFG}/starship.toml" "${HOME}/.config/" \
-    || error_exit "Failed to copy Starship config."
+    || error_exit "Failed to copy starship config."
 
   mkdir -p "${HOME}/.vnc"
-  cp "${ROOT}/vnc/xstartup" "${HOME}/.vnc/xstartup" \
-    || error_exit "Failed to copy VNC xstartup."
-  chmod +x "${HOME}/.vnc/xstartup"
+  cp "${ROOT}/vnc/xstartup" "${HOME}/.vnc/xstartup"
+  chmod +x "${HOME}/.vnc/xstartup" || error_exit "Failed to set xstartup executable."
 
   mkdir -p "${HOME}/.config/xfce4/terminal"
-  cp "${ROOT}/xfce4/terminalrc" "${HOME}/.config/xfce4/terminal/" \
-    || error_exit "Failed to copy XFCE4 terminal config."
+  cp "${ROOT}/xfce4/terminalrc" "${HOME}/.config/xfce4/terminal/" || true
 }
 
-# 7) Start VNC server (skip if already running)
 start_vnc_server() {
-  info "Starting TigerVNC server on display :1..."
+  info "Starting VNC server on :1..."
   proot-distro login archlinux -- bash -lc '
     set -euo pipefail
     if vncserver -list | grep -q "^:1"; then
-      echo "[INFO] VNC :1 is already running"
+      echo "[INFO] VNC :1 already running."
     else
       vncserver -geometry 1280x720 -depth 24 :1
     fi
-  ' || error_exit "Failed to start VNC server."
+  ' || error_exit "VNC server failed to start."
 }
 
-# 8) Show completion instructions
 show_completion() {
   printf "\n%b[✔] Setup completed successfully!%b\n\n" "$GREEN" "$RESET"
   cat << EOF
-You can now connect to your new XFCE4 desktop via VNC:
-  • Server: localhost:5901
-  • Password: (set on first vncserver run)
+🎉 XFCE4 Desktop is ready on VNC display :1
 
-To re-enter your Arch environment later:
+  • Connect to: localhost:5901
+  • Use your VNC client with password (set on first run)
+
+🖥️  Enter Arch Linux again:
   proot-distro login archlinux
 
-To stop the VNC server:
+🛑  Stop VNC server:
   proot-distro login archlinux -- bash -lc "vncserver -kill :1"
 EOF
 }
