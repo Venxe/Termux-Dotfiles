@@ -8,30 +8,27 @@ warn() { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; }
 
 # === Gerekli Termux Paketleri ===
-TERMUX_PACKAGES=(
-    proot-distro
-    fish
-    starship
-)
+TERMUX_PACKAGES=(proot-distro)
 
 install_termux_packages() {
-    info "Termux paketleri kuruluyor..."
+    info "Termux paketleri kontrol ediliyor..."
     for pkg in "${TERMUX_PACKAGES[@]}"; do
         if ! command -v "$pkg" >/dev/null 2>&1; then
+            info "$pkg kuruluyor..."
             pkg install -y "$pkg"
         else
-            info "$pkg zaten kurulu, atlanıyor."
+            info "$pkg zaten kurulu."
         fi
     done
 }
 
 # === Arch Linux Kurulumu ===
-install_arch_if_missing() {
-    if ! proot-distro list | grep -q "archlinux"; then
+install_or_prepare_arch() {
+    if proot-distro list | grep -q "archlinux"; then
+        info "Arch Linux zaten kurulu. Kurulum atlanıyor."
+    else
         info "Arch Linux kurulumu başlatılıyor..."
         proot-distro install archlinux
-    else
-        info "Arch Linux zaten kurulu."
     fi
 }
 
@@ -48,7 +45,7 @@ copy_dotfiles_to_arch() {
     "
 }
 
-# === VNC xstartup Kopyalama ===
+# === xstartup Kopyalama ===
 copy_xstartup_script() {
     local shared_path="/root/storage/shared/Termux-Dotfiles"
 
@@ -60,28 +57,28 @@ copy_xstartup_script() {
     "
 }
 
-# === Arch İçinde XFCE4 + VNC Kurulumu ===
-setup_arch_xfce4_vnc() {
-    info "Arch içinde XFCE4 ve TigerVNC kuruluyor..."
+# === Arch İçinde Gerekli Paketleri Kur ===
+install_arch_packages() {
+    info "Arch Linux içinde gerekli paketler kuruluyor..."
     proot-distro login archlinux -- bash -c "
         pacman -Syu --noconfirm &&
-        pacman -S --noconfirm tigervnc xfce4 xfce4-goodies
+        pacman -S --noconfirm tigervnc xfce4 xfce4-goodies fish starship
     "
 }
 
 # === Ana Fonksiyon ===
 main() {
-    info "Termux Dotfiles Kurulumu Başlıyor..."
+    info "🚀 Termux Dotfiles Kurulumu Başlatılıyor..."
     install_termux_packages
-    install_arch_if_missing
-    setup_arch_xfce4_vnc
+    install_or_prepare_arch
+    install_arch_packages
     copy_dotfiles_to_arch
     copy_xstartup_script
 
-    info "Kurulum tamamlandı."
+    info "✅ Kurulum tamamlandı."
     echo -e "\n🎉 XFCE4 ortamını başlatmak için aşağıdaki komutları kullanabilirsin:\n"
     echo "  proot-distro login archlinux"
-    echo "  vncpasswd        # ilk kez çalıştırıyorsan şifre ayarla"
+    echo "  vncpasswd        # İlk kez çalıştırıyorsan şifre ayarla"
     echo "  vncserver :1     # VNC başlat"
     echo -e "\n🔗 Ardından VNC Viewer ile localhost:5901 üzerinden bağlantı kurabilirsin.\n"
 }
