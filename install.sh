@@ -22,13 +22,15 @@ install_termux_packages() {
     done
 }
 
-# === Arch Linux Kurulumu ===
+# === Arch Linux Kurulumu (ilk seferde sonlandırmadan önce kontrol ekler) ===
 install_or_prepare_arch() {
-    if proot-distro list | grep -q "archlinux"; then
-        info "Arch Linux zaten kurulu. Kurulum atlanıyor."
-    else
+    if ! proot-distro list | grep -q "archlinux"; then
         info "Arch Linux kurulumu başlatılıyor..."
         proot-distro install archlinux
+        info "Kurulum tamamlandı, script yeniden başlatılıyor..."
+        exec "$0" "$@"  # Scripti yeniden başlat
+    else
+        info "Arch Linux zaten kurulu."
     fi
 }
 
@@ -70,7 +72,7 @@ install_arch_packages() {
 main() {
     info "🚀 Termux Dotfiles Kurulumu Başlatılıyor..."
     install_termux_packages
-    install_or_prepare_arch
+    install_or_prepare_arch "$@"
     install_arch_packages
     copy_dotfiles_to_arch
     copy_xstartup_script
