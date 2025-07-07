@@ -1,0 +1,5 @@
+#!/data/data/com.termux/files/usr/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+xrdb $HOME/.Xresources
+startxfce4 &
