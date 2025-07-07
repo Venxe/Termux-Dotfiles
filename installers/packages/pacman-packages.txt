@@ -5,3 +5,4 @@ xfce4
 xfce4-goodies
 gvfs
 dbus
+reflector
