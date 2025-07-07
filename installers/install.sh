@@ -59,20 +59,30 @@ install_arch_linux() {
 
 update_arch_mirrors() {
   info "Enabling community repo and updating Arch mirrorlist..."
-  proot-distro login archlinux -- bash -lc '
-    set -euo pipefail
 
-    sed -i "/^\[community\]/,/^Include/s/^#//" /etc/pacman.conf
-    sed -i "/^#\[multilib\]/,/^#Include = \/etc\/pacman.d\/mirrorlist/s/^#//" /etc/pacman.conf
-    sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
+  local TMP_SCRIPT="/tmp/update-mirrors.sh"
+  cat > "$TMP_SCRIPT" << 'EOF'
+#!/bin/bash
+set -euo pipefail
 
-    pacman -Syu --noconfirm
+sed -i "/^\[community\]/,/^Include/s/^#//" /etc/pacman.conf
+sed -i "/^#\[multilib\]/,/^#Include = \/etc\/pacman.d\/mirrorlist/s/^#//" /etc/pacman.conf
+sed -i "s/^#ParallelDownloads/ParallelDownloads/" /etc/pacman.conf
 
-    pacman -S --noconfirm reflector || echo "[WARNING] reflector installation failed"
+pacman -Syu --noconfirm
 
-    reflector --country "US,DE,TR,GR" --latest 10 --sort age --protocol https \
-      --save /etc/pacman.d/mirrorlist || echo "[WARNING] Mirror optimization failed!"
-  '
+pacman -S --noconfirm reflector || echo "[WARNING] reflector installation failed"
+
+reflector --country "US,DE,TR,GR" --latest 10 --sort age --protocol https \
+  --save /etc/pacman.d/mirrorlist || echo "[WARNING] Mirror optimization failed!"
+EOF
+
+  chmod +x "$TMP_SCRIPT"
+
+  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
+    || error_exit "Failed to update Arch mirrorlist."
+
+  rm -f "$TMP_SCRIPT"
 }
 
 install_arch_packages() {
@@ -84,36 +94,59 @@ install_arch_packages() {
     || error_exit "Failed to copy package list into Arch Linux"
 
   info "Installing Arch packages from $pacfile..."
-  proot-distro login archlinux -- bash -lc "
-    set -euo pipefail
-    pacman -Sy --noconfirm
-    while read -r pkg; do
-      [[ -z \$pkg || \$pkg =~ ^# ]] && continue
-      if pacman -Qi \$pkg &>/dev/null; then
-        echo \"[INFO] Skipping already-installed: \$pkg\"
-      else
-        pacman -S --needed --noconfirm \$pkg || exit 1
-      fi
-    done < /root/pacman-packages.txt
-  " || error_exit "Failed to install some Arch packages."
+
+  local TMP_SCRIPT="/tmp/install-packages.sh"
+  cat > "$TMP_SCRIPT" << 'EOF'
+#!/bin/bash
+set -euo pipefail
+
+pacman -Sy --noconfirm
+
+while read -r pkg; do
+  [[ -z $pkg || $pkg =~ ^# ]] && continue
+  if pacman -Qi $pkg &>/dev/null; then
+    echo "[INFO] Skipping already-installed: $pkg"
+  else
+    pacman -S --needed --noconfirm $pkg || exit 1
+  fi
+done < /root/pacman-packages.txt
+EOF
+
+  chmod +x "$TMP_SCRIPT"
+
+  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
+    || error_exit "Failed to install some Arch packages."
+
+  rm -f "$TMP_SCRIPT"
 }
 
 configure_shell_and_dotfiles() {
   local ROOT
-  ROOT="$(cd "$(dirname "$0")" && pwd)"
+  ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
   local CFG="${ROOT}/dotcfg/.config"
 
   info "Configuring Fish shell and installing Starship prompt..."
-  proot-distro login archlinux -- bash -lc '
-    set -euo pipefail
-    if ! grep -qx "/usr/bin/fish" /etc/shells; then
-      echo "/usr/bin/fish" >> /etc/shells
-    fi
-    chsh -s /usr/bin/fish || true
-    if ! command -v starship &>/dev/null; then
-      curl -sS https://starship.rs/install.sh | sh -s -- -y
-    fi
-  '
+
+  local TMP_SCRIPT="/tmp/configure-shell.sh"
+  cat > "$TMP_SCRIPT" << 'EOF'
+#!/bin/bash
+set -euo pipefail
+
+if ! grep -qx "/usr/bin/fish" /etc/shells; then
+  echo "/usr/bin/fish" >> /etc/shells
+fi
+
+chsh -s /usr/bin/fish || true
+
+if ! command -v starship &>/dev/null; then
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+EOF
+
+  chmod +x "$TMP_SCRIPT"
+
+  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
+    || error_exit "Failed to configure shell and starship."
 
   info "Deploying configuration files to \$HOME..."
   mkdir -p "${HOME}/.config/fish"
@@ -136,14 +169,25 @@ configure_shell_and_dotfiles() {
 
 start_vnc_server() {
   info "Starting TigerVNC server on display :1..."
-  proot-distro login archlinux -- bash -lc '
-    set -euo pipefail
-    if vncserver -list | grep -q "^:1"; then
-      echo "[INFO] VNC :1 is already running"
-    else
-      vncserver -geometry 1280x720 -depth 24 :1
-    fi
-  ' || error_exit "Failed to start VNC server."
+
+  local TMP_SCRIPT="/tmp/start-vnc.sh"
+  cat > "$TMP_SCRIPT" << 'EOF'
+#!/bin/bash
+set -euo pipefail
+
+if vncserver -list | grep -q "^:1"; then
+  echo "[INFO] VNC :1 is already running"
+else
+  vncserver -geometry 1280x720 -depth 24 :1
+fi
+EOF
+
+  chmod +x "$TMP_SCRIPT"
+
+  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
+    || error_exit "Failed to start VNC server."
+
+  rm -f "$TMP_SCRIPT"
 }
 
 show_completion() {
