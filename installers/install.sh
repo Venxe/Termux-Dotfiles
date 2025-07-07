@@ -51,7 +51,7 @@ install_arch_linux() {
     info "Arch Linux is already installed. Skipping installation."
   else
     info "Installing Arch Linux distribution..."
-    proot-distro install archlinux || error_exit "Arch Linux installation failed."
+    proot-distro install archlinux
   fi
 }
 
