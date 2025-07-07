@@ -82,6 +82,9 @@ install_arch_packages() {
   info "Copying Arch package list into Arch root..."
   cp "$pacfile" "$HOME/" || error_exit "Failed to copy $pacfile into home."
 
+  local filename
+  filename=$(basename "$pacfile")
+
   info "Installing Arch packages from $pacfile..."
   proot-distro login archlinux -- bash -lc "
     set -euo pipefail
@@ -93,7 +96,7 @@ install_arch_packages() {
       else
         pacman -S --needed --noconfirm \$pkg || exit 1
       fi
-    done < /root/$(basename "$pacfile")
+    done < /root/${filename}
   " || error_exit "Failed to install some Arch packages."
 }
 
