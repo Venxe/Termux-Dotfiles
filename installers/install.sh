@@ -16,9 +16,6 @@ error_exit() {
   exit 1
 }
 
-TMP_DIR="${HOME}/.tmp"
-mkdir -p "$TMP_DIR"
-
 update_and_install_termux_pkgs() {
   local pkgfile="installers/packages/pkg-packages.txt"
   [[ -f $pkgfile ]] || error_exit "Termux package list not found: $pkgfile"
@@ -54,16 +51,14 @@ install_arch_linux() {
     info "Arch Linux is already installed. Skipping installation."
   else
     info "Installing Arch Linux distribution..."
-    if ! proot-distro install archlinux; then
-      info "Warning: Arch Linux installation may already exist or failed, continuing..."
-    fi
+    proot-distro install archlinux || error_exit "Arch Linux installation failed."
   fi
 }
 
 update_arch_mirrors() {
   info "Enabling community repo and updating Arch mirrorlist..."
 
-  local TMP_SCRIPT="$TMP_DIR/update-mirrors.sh"
+  local TMP_SCRIPT="/tmp/update-mirrors.sh"
 
   cat > "$TMP_SCRIPT" << 'EOF'
 #!/bin/bash
@@ -94,101 +89,92 @@ install_arch_packages() {
   [[ -f $pacfile ]] || error_exit "Arch package list not found: $pacfile"
 
   info "Copying Arch package list into Arch root..."
+  # Copy package list file into Arch root
   proot-distro login archlinux -- bash -c "cat > /root/pacman-packages.txt" < "$pacfile" \
     || error_exit "Failed to copy package list into Arch Linux"
 
   info "Installing Arch packages from $pacfile..."
+  proot-distro login archlinux -- bash -lc "
+    set -euo pipefail
+    pacman -Sy --noconfirm
+    while read -r pkg; do
+      [[ -z \$pkg || \$pkg =~ ^# ]] && continue
+      if pacman -Qi \$pkg &>/dev/null; then
+        echo \"[INFO] Skipping already-installed: \$pkg\"
+      else
+        pacman -S --needed --noconfirm \$pkg || exit 1
+      fi
+    done < /root/pacman-packages.txt
+  " || error_exit "Failed to install some Arch packages."
+}
 
-  local TMP_SCRIPT="$TMP_DIR/install-packages.sh"
-  cat > "$TMP_SCRIPT" << 'EOF'
-#!/bin/bash
-set -euo pipefail
+copy_dotfiles_to_arch_root() {
+  local ROOT
+  ROOT="$(cd "$(dirname "$0")/../.." && pwd)"  # project root
 
-pacman -Sy --noconfirm
-while read -r pkg; do
-  [[ -z $pkg || $pkg =~ ^# ]] && continue
-  if pacman -Qi $pkg &>/dev/null; then
-    echo "[INFO] Skipping already-installed: $pkg"
-  else
-    pacman -S --needed --noconfirm $pkg || exit 1
-  fi
-done < /root/pacman-packages.txt
-EOF
+  info "Copying dotfiles and configs to Arch root filesystem..."
 
-  chmod +x "$TMP_SCRIPT"
-  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
-    || error_exit "Failed to install some Arch packages."
+  # Prepare temporary local copy directory
+  local TMPDIR="$(mktemp -d)"
+  cp -r "${ROOT}/dotcfg/.config" "$TMPDIR/"
+  cp -r "${ROOT}/vnc" "$TMPDIR/"
+  cp -r "${ROOT}/xfce4" "$TMPDIR/"
 
-  rm -f "$TMP_SCRIPT"
+  # Copy directories into Arch root
+  for item in .config vnc xfce4; do
+    proot-distro login archlinux -- mkdir -p "/root/$item"
+    proot-distro copy "$TMPDIR/$item" "/root/$item"
+  done
+
+  rm -rf "$TMPDIR"
 }
 
 configure_shell_and_dotfiles() {
-  local ROOT
-  ROOT="$(cd "$(dirname "$0")"/../.. && pwd)"
-  local CFG="${ROOT}/dotcfg/.config"
+  info "Configuring Fish shell, Starship prompt, and deploying configs inside Arch..."
 
-  info "Configuring Fish shell and installing Starship prompt..."
+  proot-distro login archlinux -- bash -lc '
+    set -euo pipefail
 
-  local TMP_SCRIPT="$TMP_DIR/configure-shell.sh"
-  cat > "$TMP_SCRIPT" << 'EOF'
-#!/bin/bash
-set -euo pipefail
+    # Add fish shell to valid shells if missing
+    if ! grep -qx "/usr/bin/fish" /etc/shells; then
+      echo "/usr/bin/fish" >> /etc/shells
+    fi
 
-if ! grep -qx "/usr/bin/fish" /etc/shells; then
-  echo "/usr/bin/fish" >> /etc/shells
-fi
+    # Change default shell to fish for root user
+    chsh -s /usr/bin/fish || true
 
-chsh -s /usr/bin/fish || true
+    # Install starship if missing
+    if ! command -v starship &>/dev/null; then
+      curl -sS https://starship.rs/install.sh | sh -s -- -y
+    fi
 
-if ! command -v starship &>/dev/null; then
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-fi
-EOF
+    # Deploy config files to proper locations
+    mkdir -p /root/.config/fish
+    cp -r /root/.config/fish/config.fish /root/.config/fish/
 
-  chmod +x "$TMP_SCRIPT"
-  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
-    || error_exit "Failed to configure shell and install Starship prompt."
+    mkdir -p /root/.config
+    cp /root/.config/starship.toml /root/.config/
 
-  info "Deploying configuration files to \$HOME..."
+    mkdir -p /root/.vnc
+    cp /root/vnc/xstartup /root/.vnc/xstartup
+    chmod +x /root/.vnc/xstartup
 
-  mkdir -p "${HOME}/.config/fish"
-  cp "${CFG}/fish/config.fish" "${HOME}/.config/fish/" \
-    || error_exit "Failed to copy Fish config."
-
-  mkdir -p "${HOME}/.config"
-  cp "${CFG}/starship.toml" "${HOME}/.config/" \
-    || error_exit "Failed to copy Starship config."
-
-  mkdir -p "${HOME}/.vnc"
-  cp "${ROOT}/vnc/xstartup" "${HOME}/.vnc/xstartup" \
-    || error_exit "Failed to copy VNC xstartup."
-  chmod +x "${HOME}/.vnc/xstartup"
-
-  mkdir -p "${HOME}/.config/xfce4/terminal"
-  cp "${ROOT}/xfce4/terminalrc" "${HOME}/.config/xfce4/terminal/" \
-    || error_exit "Failed to copy XFCE4 terminal config."
+    mkdir -p /root/.config/xfce4/terminal
+    cp /root/xfce4/terminalrc /root/.config/xfce4/terminal/
+  '
 }
 
 start_vnc_server() {
-  info "Starting TigerVNC server on display :1..."
+  info "Starting TigerVNC server on display :1 inside Arch..."
 
-  local TMP_SCRIPT="$TMP_DIR/start-vnc.sh"
-  cat > "$TMP_SCRIPT" << 'EOF'
-#!/bin/bash
-set -euo pipefail
-
-if vncserver -list | grep -q "^:1"; then
-  echo "[INFO] VNC :1 is already running"
-else
-  vncserver -geometry 1280x720 -depth 24 :1
-fi
-EOF
-
-  chmod +x "$TMP_SCRIPT"
-  proot-distro login archlinux -- bash -c "bash $TMP_SCRIPT" \
-    || error_exit "Failed to start VNC server."
-
-  rm -f "$TMP_SCRIPT"
+  proot-distro login archlinux -- bash -lc '
+    set -euo pipefail
+    if vncserver -list | grep -q "^:1"; then
+      echo "[INFO] VNC :1 is already running"
+    else
+      vncserver -geometry 1280x720 -depth 24 :1
+    fi
+  ' || error_exit "Failed to start VNC server."
 }
 
 show_completion() {
@@ -212,6 +198,7 @@ main() {
   install_arch_linux
   update_arch_mirrors
   install_arch_packages
+  copy_dotfiles_to_arch_root
   configure_shell_and_dotfiles
   start_vnc_server
   show_completion
