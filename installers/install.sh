@@ -8,12 +8,10 @@ GREEN=$(tput setaf 2)
 CYAN=$(tput setaf 6)
 RESET=$(tput sgr0)
 
-# Print an informational message
 info() {
   printf "%b[INFO]%b %s\n" "$CYAN" "$RESET" "$1"
 }
 
-# Print an error message and exit
 error_exit() {
   printf "%b[ERROR]%b %s\n" "$RED" "$RESET" "$1" >&2
   exit 1
@@ -86,9 +84,10 @@ install_arch_packages() {
   " || error_exit "Failed to install some Arch packages."
 }
 
-# 6) Configure shell, prompt, and dotfiles
+# 6) Configure shell, prompt, dotfiles and VNC xstartup
 configure_shell_and_dotfiles() {
-  local ROOT="$(cd "$(dirname "$0")" && pwd)"
+  local ROOT
+  ROOT="$(cd "$(dirname "$0")" && pwd)"
   local CFG="${ROOT}/dotcfg/.config"
 
   info "Configuring Fish shell and installing Starship prompt..."
@@ -111,7 +110,8 @@ configure_shell_and_dotfiles() {
 
   # VNC xstartup
   mkdir -p "${HOME}/.vnc"
-  cp "${ROOT}/vnc/xstartup" "${HOME}/.vnc/xstartup"
+  cp "${ROOT}/vnc/xstartup" "${HOME}/.vnc/xstartup" \
+    || error_exit "Failed to copy VNC xstartup."
   chmod +x "${HOME}/.vnc/xstartup"
 
   # XFCE4 terminal
@@ -120,17 +120,28 @@ configure_shell_and_dotfiles() {
     || error_exit "Failed to copy XFCE4 terminal config."
 }
 
-# 7) Show completion instructions
+# 7) Start VNC server (which will invoke .vnc/xstartup)
+start_vnc_server() {
+  info "Starting TigerVNC server on display :1..."
+  proot-distro login archlinux -- bash -lc '
+    set -euo pipefail
+    vncserver -geometry 1280x720 -depth 24 :1
+  ' || error_exit "Failed to start VNC server."
+}
+
+# 8) Show completion instructions
 show_completion() {
   printf "\n%b[✔] Setup completed successfully!%b\n\n" "$GREEN" "$RESET"
   cat << EOF
-To enter your Arch environment:
+You can now connect to your new XFCE4 desktop via VNC:
+  • Server: localhost:5901
+  • Password: (set on first vncserver run)
+
+To re-enter your Arch environment later:
   proot-distro login archlinux
 
-To start the VNC server with XFCE4:
-  vncserver -geometry 1280x720 -depth 24 :1
-
-Connect your VNC client to localhost:5901.
+To stop the VNC server:
+  proot-distro login archlinux -- bash -lc "vncserver -kill :1"
 EOF
 }
 
@@ -141,6 +152,7 @@ main() {
   update_arch_mirrors
   install_arch_packages
   configure_shell_and_dotfiles
+  start_vnc_server
   show_completion
 }
 
