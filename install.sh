@@ -19,10 +19,14 @@ bootstrap_termux() {
 
 install_arch_linux() {
     info "Installing tools for Arch bootstrap..."
-    pkg install -y proot-distro
+    pkg install -y proot-distro || error "Failed to install proot-distro"
 
     info "Installing Arch Linux distribution..."
-    proot-distro install archlinux
+    if ! proot-distro install archlinux; then
+        warn "Arch Linux is already installed or installation failed; continuing anyway."
+    else
+        info "Arch Linux installed successfully."
+    fi
 
     info "Generating Arch launch script..."
     cat > "$START_ARCH_SH" <<EOF
