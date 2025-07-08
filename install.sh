@@ -48,12 +48,14 @@ copy_dotfiles_to_arch() {
 
     if [ -f "$dotfiles_dir/.config/fish/config.fish" ]; then
         cp -f "$dotfiles_dir/.config/fish/config.fish" "$ARCH_ROOTFS/.config/fish/config.fish"
+        touch "$ARCH_ROOTFS/.config/fish/config.fish"
     else
         warn "Fish config not found in Termux-Dotfiles."
     fi
 
     if [ -f "$dotfiles_dir/.config/starship.toml" ]; then
         cp -f "$dotfiles_dir/.config/starship.toml" "$ARCH_ROOTFS/.config/starship.toml"
+        touch "$ARCH_ROOTFS/.config/starship.toml"
     else
         warn "Starship config not found in Termux-Dotfiles."
     fi
@@ -61,6 +63,7 @@ copy_dotfiles_to_arch() {
     if [ -f "$dotfiles_dir/.vnc/xstartup" ]; then
         cp -f "$dotfiles_dir/.vnc/xstartup" "$ARCH_ROOTFS/.vnc/xstartup"
         chmod +x "$ARCH_ROOTFS/.vnc/xstartup"
+        touch "$ARCH_ROOTFS/.vnc/xstartup"
     else
         warn "VNC xstartup file not found in Termux-Dotfiles."
     fi
