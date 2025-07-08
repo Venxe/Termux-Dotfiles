@@ -66,14 +66,30 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files from Termux-Dotfiles..."
-mkdir -p ~/.config/fish
-cp -f /data/data/com.termux/files/home/.config/fish/config.fish ~/.config/fish/config.fish
-cp -f /data/data/com.termux/files/home/.config/starship.toml ~/.config/starship.toml
+
+# Fish config
+if [ -f "/data/data/com.termux/files/home/.config/fish/config.fish" ]; then
+    mkdir -p "$HOME/.config/fish"
+    cp -f /data/data/com.termux/files/home/.config/fish/config.fish "$HOME/.config/fish/config.fish"
+    info "Fish config copied."
+else
+    warn "Fish config not found in Termux-Dotfiles, skipping."
+fi
+
+# Starship config
+if [ -f "/data/data/com.termux/files/home/.config/starship.toml" ]; then
+    mkdir -p "$HOME/.config"
+    cp -f /data/data/com.termux/files/home/.config/starship.toml "$HOME/.config/starship.toml"
+    info "Starship config copied."
+else
+    warn "Starship config not found in Termux-Dotfiles, skipping."
+fi
 
 info "Copying VNC xstartup file..."
-mkdir -p ~/.vnc
-cp -f /data/data/com.termux/files/home/.vnc/xstartup ~/.vnc/xstartup
-chmod +x ~/.vnc/xstartup
+mkdir -p "$HOME/.vnc"
+cp -f /data/data/com.termux/files/home/.vnc/xstartup "$HOME/.vnc/xstartup"
+chmod +x "$HOME/.vnc/xstartup"
+info "VNC xstartup copied."
 
 info "Setting default shell to fish..."
 chsh -s /usr/bin/fish || warn "Could not change shell automatically; please run 'chsh -s /usr/bin/fish' manually."
