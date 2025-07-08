@@ -70,6 +70,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files from Termux-Dotfiles..."
+mkdir -p ~/.config/fish
 cp -f /data/data/com.termux/files/home/.config/fish/config.fish ~/.config/fish/config.fish
 cp -f /data/data/com.termux/files/home/.config/starship.toml ~/.config/starship.toml
 
