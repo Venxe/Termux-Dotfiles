@@ -62,11 +62,7 @@ pacman -Syu --noconfirm
 
 info "Installing packages in Arch..."
 for pkg in "${PACKAGES[@]}"; do
-    if ! pacman -Qi "$pkg" &>/dev/null; then
-        pacman -S --noconfirm "$pkg"
-    else
-        info "$pkg is already installed, skipping."
-    fi
+    pacman -S --noconfirm --needed "$pkg"
 done
 
 info "Copying configuration files from Termux-Dotfiles..."
