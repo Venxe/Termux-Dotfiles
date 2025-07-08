@@ -34,6 +34,36 @@ install_arch_linux() {
 exec proot-distro login archlinux -- bash "\$@"
 EOF
     chmod +x "$START_ARCH_SH"
+
+    # Dosyaları Arch rootfs içine kopyala
+    copy_dotfiles_to_arch
+}
+
+copy_dotfiles_to_arch() {
+    info "Copying dotfiles from Termux into Arch rootfs..."
+
+    local arch_rootfs="$PREFIX/var/lib/proot-distro/installed-rootfs/archlinux/root"
+
+    mkdir -p "$arch_rootfs/.config/fish" "$arch_rootfs/.config" "$arch_rootfs/.vnc"
+
+    if [ -f "$HOME/.config/fish/config.fish" ]; then
+        cp -f "$HOME/.config/fish/config.fish" "$arch_rootfs/.config/fish/config.fish"
+    else
+        warn "Fish config file not found in Termux."
+    fi
+
+    if [ -f "$HOME/.config/starship.toml" ]; then
+        cp -f "$HOME/.config/starship.toml" "$arch_rootfs/.config/starship.toml"
+    else
+        warn "Starship config file not found in Termux."
+    fi
+
+    if [ -f "$HOME/.vnc/xstartup" ]; then
+        cp -f "$HOME/.vnc/xstartup" "$arch_rootfs/.vnc/xstartup"
+        chmod +x "$arch_rootfs/.vnc/xstartup"
+    else
+        warn "VNC xstartup file not found in Termux."
+    fi
 }
 
 # ---- Arch Configuration ----
@@ -61,30 +91,6 @@ info "Installing required packages..."
 for pkg in "${PACKAGES[@]}"; do
     pacman -S --noconfirm --needed "$pkg"
 done
-
-info "Copying dotfiles from Termux to Arch..."
-
-if [ -f /data/data/com.termux/files/home/.config/fish/config.fish ]; then
-    mkdir -p ~/.config/fish
-    cp -f /data/data/com.termux/files/home/.config/fish/config.fish ~/.config/fish/config.fish
-else
-    warn "Fish config not found."
-fi
-
-if [ -f /data/data/com.termux/files/home/.config/starship.toml ]; then
-    mkdir -p ~/.config
-    cp -f /data/data/com.termux/files/home/.config/starship.toml ~/.config/starship.toml
-else
-    warn "Starship config not found."
-fi
-
-if [ -f /data/data/com.termux/files/home/.vnc/xstartup ]; then
-    mkdir -p ~/.vnc
-    cp -f /data/data/com.termux/files/home/.vnc/xstartup ~/.vnc/xstartup
-    chmod +x ~/.vnc/xstartup
-else
-    warn "VNC xstartup file not found."
-fi
 
 info "Setting fish as default shell..."
 chsh -s /usr/bin/fish || warn "chsh failed; run 'chsh -s /usr/bin/fish' manually if needed."
