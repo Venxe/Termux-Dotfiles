@@ -6,6 +6,10 @@ info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
 warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; }
 
+# ---- Determine Script Directory ----
+# This is used to clean up the Termux-Dotfiles directory after a successful install.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ---- Required Packages ----
 PACKAGES=(
     tigervnc
@@ -65,9 +69,17 @@ set_default_shell() {
     fi
 }
 
+cleanup_dotfiles() {
+    info "Cleaning up Termux-Dotfiles directory..."
+    # Move out of the directory before deletion
+    cd "$(dirname "$SCRIPT_DIR")"
+    rm -rf "$SCRIPT_DIR"
+    info "Cleanup complete."
+}
+
 print_final_message() {
     echo -e "\n✅ Installation complete!"
-    echo "To start VNC session, run:"
+    echo "To start your VNC session, run:"
     echo "  vncserver"
     echo -e "\nIn your VNC client, connect to: localhost:5901"
 }
@@ -80,6 +92,7 @@ main() {
     setup_vnc
     set_default_shell
     print_final_message
+    cleanup_dotfiles
 }
 
 main "$@"
