@@ -125,6 +125,7 @@ print_final_message() {
 main() {
     bootstrap_termux
     install_arch_linux
+    copy_dotfiles_to_arch
     arch_install_and_configure
     cleanup_dotfiles
     print_final_message
