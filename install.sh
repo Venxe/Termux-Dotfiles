@@ -67,12 +67,12 @@ done
 
 info "Copying configuration files from Termux-Dotfiles..."
 mkdir -p ~/.config/fish
-cp -f /data/data/com.termux/files/home/.config/fish/config.fish ~/.config/fish/config.fish
-cp -f /data/data/com.termux/files/home/.config/starship.toml ~/.config/starship.toml
+cp -f "$SCRIPT_DIR/.config/fish/config.fish" ~/.config/fish/config.fish
+cp -f "$SCRIPT_DIR/.config/starship.toml" ~/.config/starship.toml
 
 info "Copying VNC xstartup file..."
 mkdir -p ~/.vnc
-cp -f /data/data/com.termux/files/home/.vnc/xstartup ~/.vnc/xstartup
+cp -f "$SCRIPT_DIR/.vnc/xstartup" ~/.vnc/xstartup
 chmod +x ~/.vnc/xstartup
 
 info "Setting default shell to fish..."
