@@ -7,7 +7,7 @@ warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; exit 1; }
 
 # ---- Determine Script Directory ----
-SCRIPT_DIR="$(pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 START_ARCH_SH="$HOME/start-arch.sh"
 
 # ---- Termux Bootstrap & Arch Installation ----
@@ -40,13 +40,16 @@ EOF
 
 arch_install_and_configure() {
     info "Entering Arch environment for configuration..."
-    "$START_ARCH_SH" <<'EOF'
+    SCRIPT_DIR="$SCRIPT_DIR" "$START_ARCH_SH" <<'EOF'
 set -euo pipefail
 
 # ---- Helper Functions ----
 info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
 warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; exit 1; }
+
+# ---- Environment Safety ----
+SCRIPT_DIR="${SCRIPT_DIR:-/data/data/com.termux/files/home/Termux-Dotfiles}"
 
 # ---- Package List ----
 PACKAGES=(
