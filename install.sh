@@ -40,29 +40,31 @@ EOF
 }
 
 copy_dotfiles_to_arch() {
-    info "Copying dotfiles from Termux into Arch rootfs..."
+    info "Copying dotfiles from Termux-Dotfiles directory into Arch Linux rootfs..."
 
-    local arch_rootfs="$PREFIX/var/lib/proot-distro/installed-rootfs/archlinux/root"
+    local dotfiles_dir="$SCRIPT_DIR"
 
-    mkdir -p "$arch_rootfs/.config/fish" "$arch_rootfs/.config" "$arch_rootfs/.vnc"
+    mkdir -p "$ARCH_ROOTFS/.config/fish"
+    mkdir -p "$ARCH_ROOTFS/.config"
+    mkdir -p "$ARCH_ROOTFS/.vnc"
 
-    if [ -f "$HOME/.config/fish/config.fish" ]; then
-        cp -f "$HOME/.config/fish/config.fish" "$arch_rootfs/.config/fish/config.fish"
+    if [ -f "$dotfiles_dir/.config/fish/config.fish" ]; then
+        cp -f "$dotfiles_dir/.config/fish/config.fish" "$ARCH_ROOTFS/.config/fish/config.fish"
     else
-        warn "Fish config file not found in Termux."
+        warn "Fish config file not found in Termux-Dotfiles."
     fi
 
-    if [ -f "$HOME/.config/starship.toml" ]; then
-        cp -f "$HOME/.config/starship.toml" "$arch_rootfs/.config/starship.toml"
+    if [ -f "$dotfiles_dir/.config/starship.toml" ]; then
+        cp -f "$dotfiles_dir/.config/starship.toml" "$ARCH_ROOTFS/.config/starship.toml"
     else
-        warn "Starship config file not found in Termux."
+        warn "Starship config file not found in Termux-Dotfiles."
     fi
 
-    if [ -f "$HOME/.vnc/xstartup" ]; then
-        cp -f "$HOME/.vnc/xstartup" "$arch_rootfs/.vnc/xstartup"
-        chmod +x "$arch_rootfs/.vnc/xstartup"
+    if [ -f "$dotfiles_dir/.vnc/xstartup" ]; then
+        cp -f "$dotfiles_dir/.vnc/xstartup" "$ARCH_ROOTFS/.vnc/xstartup"
+        chmod +x "$ARCH_ROOTFS/.vnc/xstartup"
     else
-        warn "VNC xstartup file not found in Termux."
+        warn "VNC xstartup file not found in Termux-Dotfiles."
     fi
 }
 
