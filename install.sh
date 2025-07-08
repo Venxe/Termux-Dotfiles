@@ -6,7 +6,7 @@ info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
 warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
 error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; exit 1; }
 
-# ---- Determine Script Directory ----
+# ---- Script Paths ----
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 START_ARCH_SH="$HOME/start-arch.sh"
 
@@ -18,7 +18,7 @@ bootstrap_termux() {
 }
 
 install_arch_linux() {
-    info "Installing tools for Arch bootstrap..."
+    info "Installing proot-distro..."
     pkg install -y proot-distro || error "Failed to install proot-distro"
 
     info "Installing Arch Linux distribution..."
@@ -28,7 +28,7 @@ install_arch_linux() {
         info "Arch Linux installed successfully."
     fi
 
-    info "Generating Arch launch script..."
+    info "Creating Arch launch script..."
     cat > "$START_ARCH_SH" <<EOF
 #!/data/data/com.termux/files/usr/bin/bash
 exec proot-distro login archlinux -- bash "\$@"
@@ -36,19 +36,16 @@ EOF
     chmod +x "$START_ARCH_SH"
 }
 
-# ---- Inside Arch: Package Installation & Configuration ----
+# ---- Arch Configuration ----
 
 arch_install_and_configure() {
-    info "Entering Arch environment for configuration..."
+    info "Entering Arch for package installation and configuration..."
     "$START_ARCH_SH" <<'EOF'
 set -euo pipefail
 
-# ---- Helper Functions ----
 info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
 warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
-error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; exit 1; }
 
-# ---- Package List ----
 PACKAGES=(
     fish
     starship
@@ -57,26 +54,40 @@ PACKAGES=(
     tigervnc
 )
 
-info "Updating Arch package database and upgrading..."
+info "Updating Arch packages..."
 pacman -Syu --noconfirm
 
-info "Installing packages in Arch..."
+info "Installing required packages..."
 for pkg in "${PACKAGES[@]}"; do
     pacman -S --noconfirm --needed "$pkg"
 done
 
-info "Copying configuration files from Termux-Dotfiles..."
-mkdir -p ~/.config/fish
-cp -f /data/data/com.termux/files/home/.config/fish/config.fish ~/.config/fish/config.fish
-cp -f /data/data/com.termux/files/home/.config/starship.toml ~/.config/starship.toml
+info "Copying dotfiles from Termux to Arch..."
 
-info "Copying VNC xstartup file..."
-mkdir -p ~/.vnc
-cp -f /data/data/com.termux/files/home/.vnc/xstartup ~/.vnc/xstartup
-chmod +x ~/.vnc/xstartup
+if [ -f /data/data/com.termux/files/home/.config/fish/config.fish ]; then
+    mkdir -p ~/.config/fish
+    cp -f /data/data/com.termux/files/home/.config/fish/config.fish ~/.config/fish/config.fish
+else
+    warn "Fish config not found."
+fi
 
-info "Setting default shell to fish..."
-chsh -s /usr/bin/fish || warn "Could not change shell automatically; please run 'chsh -s /usr/bin/fish' manually."
+if [ -f /data/data/com.termux/files/home/.config/starship.toml ]; then
+    mkdir -p ~/.config
+    cp -f /data/data/com.termux/files/home/.config/starship.toml ~/.config/starship.toml
+else
+    warn "Starship config not found."
+fi
+
+if [ -f /data/data/com.termux/files/home/.vnc/xstartup ]; then
+    mkdir -p ~/.vnc
+    cp -f /data/data/com.termux/files/home/.vnc/xstartup ~/.vnc/xstartup
+    chmod +x ~/.vnc/xstartup
+else
+    warn "VNC xstartup file not found."
+fi
+
+info "Setting fish as default shell..."
+chsh -s /usr/bin/fish || warn "chsh failed; run 'chsh -s /usr/bin/fish' manually if needed."
 
 info "Arch configuration complete."
 EOF
@@ -85,10 +96,10 @@ EOF
 # ---- Cleanup ----
 
 cleanup_dotfiles() {
-    info "Removing Termux-Dotfiles directory..."
+    info "Cleaning up Termux-Dotfiles..."
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
-    info "Termux-Dotfiles directory removed."
+    info "Dotfiles directory removed."
 }
 
 # ---- Final Message ----
@@ -98,7 +109,7 @@ print_final_message() {
     echo "To start Arch Linux shell: $START_ARCH_SH"
     echo "To launch VNC session inside Arch:"
     echo "  $START_ARCH_SH -c 'vncserver :1'"
-    echo -e "\nConnect your VNC client to localhost:5901"
+    echo -e "\nThen connect your VNC client to: localhost:5901"
 }
 
 # ---- Main ----
