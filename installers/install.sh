@@ -1,123 +1,111 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-# ---- Helpers ----
-info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
-warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
-error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; exit 1; }
+# Normalize line endings if necessary
+if grep -q $'\r' "$0"; then
+  sed -i 's/\r$//' "$0"
+fi
 
-# ---- Determine Dotfiles Root ----
-# install.sh now lives in installers/, so go up one level
+info() { printf "\e[1;32m[INFO]\e[0m %s\n" "$1"; }
+warn() { printf "\e[1;33m[WARN]\e[0m %s\n" "$1"; }
+error() { printf "\e[1;31m[ERROR]\e[0m %s\n" "$1" >&2; exit 1; }
+
+# Determine the root of the Termux-Dotfiles repository
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# ---- 1) Termux Update ----
-bootstrap_termux() {
-    info "Updating Termux packages..."
+update_termux() {
+    info "Updating Termux packages"
     pkg update -y && pkg upgrade -y
 }
 
-# ---- 2) Arch Linux Installation ----
-install_arch_linux() {
-    info "Ensuring proot-distro is installed..."
-    pkg install -y proot-distro || error "proot-distro installation failed"
+install_proot_and_arch() {
+    info "Installing proot-distro"
+    pkg install -y proot-distro || error "Failed to install proot-distro"
 
-    info "Installing Arch Linux (if absent)..."
+    info "Installing Arch Linux (if not already present)"
     if ! proot-distro install archlinux; then
-        warn "Arch Linux already installed or installation failed; continuing."
+        warn "Arch Linux installation skipped or already installed"
     else
-        info "Arch Linux installed successfully."
+        info "Arch Linux installed successfully"
     fi
 }
 
-# ---- 3) Arch Configuration ----
-arch_configure() {
-    info "Entering Arch environment for setup..."
+configure_arch() {
+    info "Configuring Arch Linux environment"
     proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
-# ---- Helpers inside Arch ----
-info()  { echo -e "\e[1;32m[INFO]\e[0m \$1"; }
-warn()  { echo -e "\e[1;33m[WARN]\e[0m \$1"; }
+info() { printf "\e[1;32m[INFO]\e[0m %s\n" "\$1"; }
+warn() { printf "\e[1;33m[WARN]\e[0m %s\n" "\$1"; }
 
-# ---- Paths & Files ----
 DOTFILES="\$HOST_DOTFILES"
 PKG_LIST="\$DOTFILES/installers/packages/pacman-packages.txt"
 
-# ---- 3.1) Update & Read Package List ----
-info "Updating Arch package database..."
+info "Updating package database"
 pacman -Syu --noconfirm
 
 if [[ ! -r "\$PKG_LIST" ]]; then
     error "Package list not found: \$PKG_LIST"
 fi
 
-# read non-empty, non-comment lines into array
 mapfile -t PACKAGES < <(grep -vE '^\s*(#|$)' "\$PKG_LIST")
 
-# ---- 3.2) Install Packages ----
-info "Installing packages from \$PKG_LIST..."
+info "Installing packages from list"
 for pkg in "\${PACKAGES[@]}"; do
     pacman -S --noconfirm --needed "\$pkg"
 done
 
-# ---- 3.3) Copy Config Files ----
-info "Copying Fish and Starship configs..."
+info "Copying configuration files"
 mkdir -p ~/.config/fish ~/.config
 cp -f "\$DOTFILES/.config/fish/config.fish" ~/.config/fish/
 cp -f "\$DOTFILES/.config/starship.toml" ~/.config/
 
-# ---- 3.4) Copy VNC xstartup ----
-info "Copying VNC xstartup..."
+info "Configuring VNC startup"
 mkdir -p ~/.vnc
 cp -f "\$DOTFILES/.vnc/xstartup" ~/.vnc/
 chmod +x ~/.vnc/xstartup
 
-# ---- 3.5) Shell & Fish Features ----
-info "Changing default shell to fish..."
-chsh -s /usr/bin/fish || warn "Please run 'chsh -s /usr/bin/fish' manually."
+info "Changing default shell to fish"
+chsh -s /usr/bin/fish || warn "Run 'chsh -s /usr/bin/fish' manually"
 
-info "Disabling Fish keyboard protocols feature..."
+info "Disabling fish keyboard protocols feature"
 fish -c "set -Ua fish_features no-keyboard-protocols" \
-    && info "fish_features updated." \
-    || warn "Please disable keyboard-protocols feature manually."
+    && info "fish_features updated" \
+    || warn "Set fish_features manually"
 
-info "Arch setup complete."
+info "Arch Linux configuration complete"
 EOF
 }
 
-# ---- 4) Cleanup Dotfiles ----
-cleanup_dotfiles() {
-    info "Removing Termux-Dotfiles directory..."
+cleanup() {
+    info "Removing dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
-    info "Cleanup done."
 }
 
-# ---- 5) Final Message ----
-print_final_message() {
+print_summary() {
     cat <<MSG
 
-✅ All tasks completed!
+✅ Setup complete!
 
-• Enter Arch Linux with:  
+To enter Arch Linux:
     proot-distro login archlinux
 
-• Once inside Arch, start VNC with:  
+Inside Arch, start VNC:
     vncserver :1
 
-• In your VNC client, connect to:  
+Connect your VNC client to:
     localhost:5901
 
 MSG
 }
 
-# ---- Main ----
 main() {
-    bootstrap_termux
-    install_arch_linux
-    arch_configure
-    cleanup_dotfiles
-    print_final_message
+    update_termux
+    install_proot_and_arch
+    configure_arch
+    cleanup
+    print_summary
 }
 
 main "$@"
