@@ -1,6 +1,6 @@
 # Termux-Dotfiles
 
-Termux Settings
+**Termux Settings**
 - Color: Argonaut
 - Font: Fira Code
 
