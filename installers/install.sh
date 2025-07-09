@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-set +u
-SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
-set -u
-SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
-
 info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 update_termux() {
     info "Updating Termux packages"
@@ -36,6 +33,7 @@ info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
+# Now these lines live *inside* Arch, so they expand correctly there:
 DOTFILES="$HOST_DOTFILES"
 PKG_LIST="$DOTFILES/installers/packages/pacman-packages.txt"
 
@@ -73,7 +71,7 @@ EOF
 }
 
 cleanup() {
-    info "Removing dotfiles directory"
+    info "Removing Termux-Dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
 }
