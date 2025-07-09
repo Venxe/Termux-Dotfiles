@@ -26,7 +26,7 @@ install_arch() {
 
 configure_arch() {
     info "Configuring Arch Linux environment"
-    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
+    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" HOST_HOME="$HOME" bash -s <<'EOF'
 set -euo pipefail
 
 info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
@@ -51,7 +51,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files..."
-cp -rf "$DOTFILES/.bashrc" ~/
+cp -f "$HOST_DOTFILES/.bash_profile" "$HOST_HOME/.bash_profile"
 cp -rf "$DOTFILES/.vnc" ~/
 cp -rf "$DOTFILES/.config" ~/
 chmod +x ~/.vnc/xstartup
