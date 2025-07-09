@@ -26,7 +26,7 @@ install_arch() {
 
 configure_arch() {
     info "Configuring Arch Linux environment"
-    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" HOST_HOME="$HOME" bash -s <<'EOF'
+    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
 info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
@@ -51,10 +51,9 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files..."
-touch "$HOST_HOME/.bashrc"
-cp -f "$DOTFILES/.bash_profile" "$HOST_HOME/.bash_profile"
-cp -rf "$DOTFILES/.vnc" "$HOME/"
-cp -rf "$DOTFILES/.config" "$HOME/"
+cp -rf "$DOTFILES/.bashrc" ~/
+cp -rf "$DOTFILES/.vnc" ~/
+cp -rf "$DOTFILES/.config" ~/
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
