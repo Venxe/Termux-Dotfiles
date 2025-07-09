@@ -51,7 +51,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files..."
-cp -rf "$DOTFILES/.bash_profile" ~/
+cp -rf "$DOTFILES/.bashrc" ~/
 cp -rf "$DOTFILES/.vnc" ~/
 cp -rf "$DOTFILES/.config" ~/
 chmod +x ~/.vnc/xstartup
