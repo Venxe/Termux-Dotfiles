@@ -5,7 +5,7 @@ info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-${0}}")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 update_termux() {
     info "Updating Termux packages"
@@ -26,7 +26,7 @@ install_arch() {
 
 configure_arch() {
     info "Configuring Arch Linux environment"
-    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<EOF
+    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
 info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
