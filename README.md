@@ -5,6 +5,7 @@
 - Font: Fira Code
 
 **🐧 Operating System:** Arch Linux
+
 **🖥️ Desktop Environment:** Xfce4
 
 ```bash
