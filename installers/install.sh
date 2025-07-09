@@ -51,14 +51,11 @@ for pkg in "${PACKAGES[@]}"; do
     pacman -S --noconfirm --needed "$pkg"
 done
 
-info "Copying configuration files"
-mkdir -p ~/.config/fish ~/.config
-cp -f "$DOTFILES/.config/fish/config.fish" ~/.config/fish/
-cp -f "$DOTFILES/.config/starship.toml" ~/.config/
-
-info "Copying VNC startup script"
-mkdir -p ~/.vnc
+info "Copying configuration files..."
+cp -f "$SCRIPT_DIR/.bash_profile" ~/.bash_profile
 cp -f "$DOTFILES/.vnc/xstartup" ~/.vnc/
+cp -f "$DOTFILES/.config/starship.toml" ~/.config/
+cp -f "$DOTFILES/.config/fish/config.fish" ~/.config/fish/
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
