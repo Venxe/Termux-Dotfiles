@@ -51,6 +51,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files..."
+mkdir -p ~/.vnc
 cp -f "$DOTFILES/.bash_profile" ~/.bash_profile
 cp -f "$DOTFILES/.vnc/xstartup" ~/.vnc/
 cp -f "$DOTFILES/.config/starship.toml" ~/.config/
