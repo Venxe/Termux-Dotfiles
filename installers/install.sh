@@ -5,6 +5,7 @@ info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
+# Determine the root of the dotfiles repository (install.sh lives in installers/)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 update_termux() {
@@ -30,11 +31,11 @@ configure_arch() {
       env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
-info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
-warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
-error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
+info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "\$1"; }
+warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "\$1"; }
+error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "\$1" >&2; exit 1; }
 
-DOTFILES="$HOST_DOTFILES"
+DOTFILES="\$HOST_DOTFILES"
 PKG_LIST="\$DOTFILES/installers/packages/pacman-packages.txt"
 
 info "Updating package database"
@@ -64,7 +65,7 @@ chmod +x ~/.vnc/xstartup
 info "Changing default shell to fish"
 chsh -s /usr/bin/fish || warn "Please run 'chsh -s /usr/bin/fish' manually"
 
-info "Disabling Fish keyboard protocols feature"
+info "Disabling fish keyboard-protocols feature"
 fish -c "set -Ua fish_features no-keyboard-protocols" \
     && info "fish_features updated" \
     || warn "Please disable fish_features manually"
@@ -74,7 +75,7 @@ EOF
 }
 
 cleanup() {
-    info "Removing Termux-Dotfiles directory"
+    info "Removing dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
 }
