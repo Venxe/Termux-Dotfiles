@@ -3,6 +3,7 @@ xfce4-goodies
 tigervnc
 fish
 starship
-htop
+btop
 cmatrix
+lolcat
 asciiquarium
