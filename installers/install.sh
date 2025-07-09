@@ -5,7 +5,7 @@ info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
-# Determine the root of the dotfiles repository (install.sh lives in installers/)
+# install.sh lives in installers/, so go up one level
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 update_termux() {
@@ -26,16 +26,17 @@ install_arch() {
 }
 
 configure_arch() {
-    info "Configuring Arch environment"
-    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<EOF
+    info "Configuring Arch Linux environment"
+    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
-info()  { printf "\e[1;32m[INFO]\e[0m %s\n" "\$1"; }
-warn()  { printf "\e[1;33m[WARN]\e[0m %s\n" "\$1"; }
-error() { printf "\e[1;31m[ERROR]\e[0m %s\n" "\$1" >&2; exit 1; }
+info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
+warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
+error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
-DOTFILES="\$HOST_DOTFILES"
-PKG_LIST="\$DOTFILES/installers/packages/pacman-packages.txt"
+# Now these lines live *inside* Arch, so they expand correctly there:
+DOTFILES="$HOST_DOTFILES"
+PKG_LIST="$DOTFILES/installers/packages/pacman-packages.txt"
 
 info "Updating package database"
 pacman -Syu --noconfirm
@@ -74,7 +75,7 @@ EOF
 }
 
 cleanup() {
-    info "Removing dotfiles directory"
+    info "Removing Termux-Dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
 }
