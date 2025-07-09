@@ -4,6 +4,7 @@ tigervnc
 fish
 starship
 htop
+neovim
 cmatrix
 lolcat
 asciiquarium
