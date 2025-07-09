@@ -51,11 +51,9 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files..."
-mkdir -p ~/.vnc
-cp -f "$DOTFILES/.bash_profile" ~/.bash_profile
-cp -f "$DOTFILES/.vnc/xstartup" ~/.vnc/
-cp -f "$DOTFILES/.config/starship.toml" ~/.config/
-cp -f "$DOTFILES/.config/fish/config.fish" ~/.config/fish/
+cp -rf "$DOTFILES/.bash_profile" ~/
+cp -rf "$DOTFILES/.vnc" ~/
+cp -rf "$DOTFILES/.config" ~/
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
