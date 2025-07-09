@@ -8,76 +8,73 @@ error() { echo -e "\e[1;31m[ERROR]\e[0m $1" >&2; exit 1; }
 
 # ---- Paths ----
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-START_ARCH_SH="$HOME/start-arch.sh"
 
-# ---- Termux Bootstrap & Arch Install ----
-
+# ---- 1) Termux Güncelleme ----
 bootstrap_termux() {
     info "Updating Termux packages..."
     pkg update -y && pkg upgrade -y
 }
 
+# ---- 2) Arch Linux Kurulumu ----
 install_arch_linux() {
     info "Ensuring proot-distro is installed..."
     pkg install -y proot-distro || error "proot-distro installation failed"
 
-    info "Installing Arch Linux (if absent)..."
+    info "Installing Arch Linux (if not already)..."
     if ! proot-distro install archlinux; then
         warn "Arch Linux already installed or install failed; continuing."
     else
-        info "Arch Linux installed."
+        info "Arch Linux installed successfully."
     fi
-
-    info "Writing Arch launch script to $START_ARCH_SH..."
-    cat > "$START_ARCH_SH" <<EOF
-#!/data/data/com.termux/files/usr/bin/bash
-exec proot-distro login archlinux -- bash "\$@"
-EOF
-    chmod +x "$START_ARCH_SH"
 }
 
-# ---- Inside Arch: Configure ----
-
-arch_install_and_configure() {
+# ---- 3) Arch İçinde Kurulum & Konfigürasyon ----
+arch_configure() {
     info "Entering Arch environment for setup..."
-    SCRIPT_DIR="$SCRIPT_DIR" "$START_ARCH_SH" <<'EOF'
+    
+    # $SCRIPT_DIR’i Arch içine taşı
+    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
-info()  { echo -e "\e[1;32m[INFO]\e[0m $1"; }
-warn()  { echo -e "\e[1;33m[WARN]\e[0m $1"; }
+# Basit log fonksiyonları
+info()  { echo -e "\e[1;32m[INFO]\e[0m \$1"; }
+warn()  { echo -e "\e[1;33m[WARN]\e[0m \$1"; }
 
-# ---- Variables ----
-HOST_DOTFILES="${SCRIPT_DIR:-/data/data/com.termux/files/home/Termux-Dotfiles}"
-PACKAGES=(fish starship xfce4 xfce4-goodies tigervnc)
+# Kopyalanacak dosyaların bulunduğu ana dizin
+DOTFILES="\$HOST_DOTFILES"
 
-info "Updating Arch and installing packages..."
+# Yüklenecek paketler
+PACKAGES=( fish starship xfce4 xfce4-goodies tigervnc )
+
+info "Updating Arch package database..."
 pacman -Syu --noconfirm
-pacman -S --noconfirm --needed "${PACKAGES[@]}"
 
-info "Copying user configs..."
+info "Installing required packages..."
+pacman -S --noconfirm --needed "\${PACKAGES[@]}"
+
+info "Copying Fish and Starship configs..."
 mkdir -p ~/.config/fish ~/.config
-cp -f "$HOST_DOTFILES/.config/fish/config.fish" ~/.config/fish/
-cp -f "$HOST_DOTFILES/.config/starship.toml" ~/.config/
+cp -f "\$DOTFILES/.config/fish/config.fish" ~/.config/fish/
+cp -f "\$DOTFILES/.config/starship.toml" ~/.config/
 
 info "Copying VNC xstartup..."
 mkdir -p ~/.vnc
-cp -f "$HOST_DOTFILES/.vnc/xstartup" ~/.vnc/
+cp -f "\$DOTFILES/.vnc/xstartup" ~/.vnc/
 chmod +x ~/.vnc/xstartup
 
-info "Setting default shell to fish..."
-chsh -s /usr/bin/fish || warn "Please run 'chsh -s /usr/bin/fish' manually."
+info "Changing default shell to fish..."
+chsh -s /usr/bin/fish || warn "Run 'chsh -s /usr/bin/fish' manually."
 
-info "Disabling fish keyboard protocols feature..."
+info "Disabling Fish keyboard protocols feature..."
 fish -c "set -Ua fish_features no-keyboard-protocols" \
     && info "fish_features updated." \
-    || warn "Could not set fish_features; please run manually."
+    || warn "Please set fish_features manually."
 
 info "Arch setup complete."
 EOF
 }
 
-# ---- Cleanup & Finish ----
-
+# ---- 4) Dotfiles Klasörünü Temizle ----
 cleanup_dotfiles() {
     info "Removing Termux-Dotfiles directory..."
     cd "$(dirname "$SCRIPT_DIR")"
@@ -85,22 +82,29 @@ cleanup_dotfiles() {
     info "Cleanup done."
 }
 
+# ---- 5) Son Mesaj ----
 print_final_message() {
     cat <<MSG
 
-✅ Installation and configuration complete!
+✅ All tasks completed!
 
-• Start Arch shell:   $START_ARCH_SH
-• Launch VNC inside: $START_ARCH_SH -c 'vncserver :1'
-• Connect VNC client to: localhost:5901
+• To enter Arch Linux:  
+    proot-distro login archlinux
+
+• Once inside Arch, start VNC with:  
+    vncserver :1
+
+• In your VNC client, connect to:  
+    localhost:5901
 
 MSG
 }
 
+# ---- Main ----
 main() {
     bootstrap_termux
     install_arch_linux
-    arch_install_and_configure
+    arch_configure
     cleanup_dotfiles
     print_final_message
 }
