@@ -1,11 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
+set +u
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+set -u
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+
 info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-${0}}")/.." && pwd)"
 
 update_termux() {
     info "Updating Termux packages"
@@ -33,7 +36,6 @@ info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
-# Now these lines live *inside* Arch, so they expand correctly there:
 DOTFILES="$HOST_DOTFILES"
 PKG_LIST="$DOTFILES/installers/packages/pacman-packages.txt"
 
@@ -52,7 +54,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Copying configuration files..."
-cp -f "$SCRIPT_DIR/.bash_profile" ~/.bash_profile
+cp -f "$DOTFILES/.bash_profile" ~/.bash_profile
 cp -f "$DOTFILES/.vnc/xstartup" ~/.vnc/
 cp -f "$DOTFILES/.config/starship.toml" ~/.config/
 cp -f "$DOTFILES/.config/fish/config.fish" ~/.config/fish/
@@ -71,7 +73,7 @@ EOF
 }
 
 cleanup() {
-    info "Removing Termux-Dotfiles directory"
+    info "Removing dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
 }
