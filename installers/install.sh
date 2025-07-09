@@ -52,9 +52,9 @@ done
 
 info "Copying configuration files..."
 touch "$HOST_HOME/.bashrc"
-cp -f "$HOST_DOTFILES/.bash_profile" "$HOST_HOME/.bash_profile"
-cp -rf "$DOTFILES/.vnc" ~/
-cp -rf "$DOTFILES/.config" ~/
+cp -f "$DOTFILES/.bash_profile" "$HOST_HOME/.bash_profile"
+cp -rf "$DOTFILES/.vnc" "$HOME/"
+cp -rf "$DOTFILES/.config" "$HOME/"
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
