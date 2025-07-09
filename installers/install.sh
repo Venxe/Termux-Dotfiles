@@ -8,24 +8,26 @@ error() { printf "\e[1;31m[ERROR]\e[0m %s\n" "$1" >&2; exit 1; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 update_termux() {
-    info "Updating Termux packages"
+    info "Updating Termux package repositories"
     pkg update -y && pkg upgrade -y
 }
 
 install_arch() {
     info "Ensuring proot-distro is installed"
-    pkg install -y proot-distro || error "proot-distro installation failed"
-    info "Installing Arch Linux if needed"
+    pkg install -y proot-distro || error "Failed to install proot-distro"
+
+    info "Installing Arch Linux if necessary"
     if ! proot-distro install archlinux; then
-        warn "Arch install skipped or already present"
+        warn "Arch Linux install skipped or already present"
     else
-        info "Arch installed successfully"
+        info "Arch Linux installed"
     fi
 }
 
 configure_arch() {
-    info "Configuring Arch environment"
-    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
+    info "Configuring Arch Linux environment"
+    proot-distro login archlinux -- \
+      env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
 set -euo pipefail
 
 info()  { printf "\e[1;32m[INFO]\e[0m %s\n" "\$1"; }
@@ -35,11 +37,11 @@ error() { printf "\e[1;31m[ERROR]\e[0m %s\n" "\$1" >&2; exit 1; }
 DOTFILES="\$HOST_DOTFILES"
 PKG_LIST="\$DOTFILES/installers/packages/pacman-packages.txt"
 
-info "Updating package database"
+info "Updating Arch package database"
 pacman -Syu --noconfirm
 
 if [[ ! -r "\$PKG_LIST" ]]; then
-    error "Package list not found: \$PKG_LIST"
+    error "Cannot read package list at \$PKG_LIST"
 fi
 
 mapfile -t PACKAGES < <(grep -vE '^\s*(#|$)' "\$PKG_LIST")
@@ -54,7 +56,7 @@ mkdir -p ~/.config/fish ~/.config
 cp -f "\$DOTFILES/.config/fish/config.fish" ~/.config/fish/
 cp -f "\$DOTFILES/.config/starship.toml" ~/.config/
 
-info "Configuring VNC startup"
+info "Copying VNC startup script"
 mkdir -p ~/.vnc
 cp -f "\$DOTFILES/.vnc/xstartup" ~/.vnc/
 chmod +x ~/.vnc/xstartup
@@ -62,17 +64,17 @@ chmod +x ~/.vnc/xstartup
 info "Changing default shell to fish"
 chsh -s /usr/bin/fish || warn "Please run 'chsh -s /usr/bin/fish' manually"
 
-info "Disabling fish keyboard protocols feature"
+info "Disabling Fish keyboard-protocols feature"
 fish -c "set -Ua fish_features no-keyboard-protocols" \
-    && info "fish_features updated" \
-    || warn "Please disable keyboard-protocols feature manually"
+    && info "fish_features disabled" \
+    || warn "Please disable fish_features manually"
 
-info "Arch configuration complete"
+info "Arch Linux configuration complete"
 EOF
 }
 
 cleanup() {
-    info "Removing dotfiles directory"
+    info "Removing Termux-Dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
 }
