@@ -4,9 +4,8 @@
 - Color: Argonaut
 - Font: Fira Code
 
-**🐧 Operating System:** Arch Linux
-
-**🖥️ Desktop Environment:** Xfce4
+**🐧 OS:** Arch Linux<br>
+**🖥️ DE:** Xfce4
 
 ```bash
 git clone https://github.com/Venxe/Termux-Dotfiles.git && \
