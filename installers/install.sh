@@ -6,6 +6,7 @@ warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+DOTCFG_DIR="$SCRIPT_DIR/dotcfg"
 
 update_termux() {
     info "Updating Termux packages"
@@ -26,15 +27,14 @@ install_arch() {
 
 configure_arch() {
     info "Configuring Arch Linux environment"
-    proot-distro login archlinux -- env HOST_DOTFILES="$SCRIPT_DIR" bash -s <<'EOF'
+    proot-distro login archlinux -- env DOTCFG="$DOTCFG_DIR" bash -s <<'EOF'
 set -euo pipefail
 
 info()  { printf '\e[1;32m[INFO]\e[0m %s\n' "$1"; }
 warn()  { printf '\e[1;33m[WARN]\e[0m %s\n' "$1"; }
 error() { printf '\e[1;31m[ERROR]\e[0m %s\n' "$1" >&2; exit 1; }
 
-DOTFILES="$HOST_DOTFILES"
-PKG_LIST="$DOTFILES/installers/packages/pacman-packages.txt"
+PKG_LIST="$DOTCFG/installers/packages/pacman-packages.txt"
 
 info "Updating package database"
 pacman -Syu --noconfirm
@@ -51,8 +51,8 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Deploying configuration files"
-cp -rf "$DOTFILES/.vnc" ~/
-cp -rf "$DOTFILES/.config" ~/
+cp -rf "$DOTCFG/.config" ~/
+cp -rf "$DOTCFG/.vnc" ~/
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
@@ -69,7 +69,7 @@ EOF
 
 configure_autologin() {
     info "Installing .bashrc for automatic Arch login"
-    cp -f "$SCRIPT_DIR/.bashrc" ~/.bashrc
+    cp -f "$DOTCFG/.bashrc" ~/.bashrc
     info ".bashrc deployed"
 }
 
