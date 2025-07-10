@@ -50,8 +50,7 @@ for pkg in "${PACKAGES[@]}"; do
     pacman -S --noconfirm --needed "$pkg"
 done
 
-info "Copying configuration files..."
-cp -rf "$DOTFILES/.bashrc" ~/
+info "Deploying configuration files"
 cp -rf "$DOTFILES/.vnc" ~/
 cp -rf "$DOTFILES/.config" ~/
 chmod +x ~/.vnc/xstartup
@@ -59,7 +58,7 @@ chmod +x ~/.vnc/xstartup
 info "Changing default shell to fish"
 chsh -s /usr/bin/fish || warn "Please run 'chsh -s /usr/bin/fish' manually"
 
-info "Disabling fish keyboard-protocols feature"
+info "Disabling fish keyboard‑protocols feature"
 fish -c "set -Ua fish_features no-keyboard-protocols" \
     && info "fish_features updated" \
     || warn "Please disable fish_features manually"
@@ -68,8 +67,14 @@ info "Arch Linux configuration complete"
 EOF
 }
 
+configure_autologin() {
+    info "Installing .bashrc for automatic Arch login"
+    cp -f "$SCRIPT_DIR/.bashrc" ~/.bashrc
+    info ".bashrc deployed"
+}
+
 cleanup() {
-    info "Removing Termux-Dotfiles directory"
+    info "Removing Termux‑Dotfiles directory"
     cd "$(dirname "$SCRIPT_DIR")"
     rm -rf "$SCRIPT_DIR"
 }
@@ -79,14 +84,10 @@ print_summary() {
 
 ✅ Setup complete!
 
-To enter Arch Linux:
-    proot-distro login archlinux
-
-Inside Arch, start VNC:
-    vncserver :1
-
-Connect your VNC client to:
-    localhost:5901
+• Termux will auto‑launch Arch on first shell.  
+• To enter Arch manually: proot‑distro login archlinux  
+• Inside Arch, start VNC: vncserver :1  
+• VNC client connect to: localhost:5901
 
 MSG
 }
@@ -95,6 +96,7 @@ main() {
     update_termux
     install_arch
     configure_arch
+    configure_autologin
     cleanup
     print_summary
 }
