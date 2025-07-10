@@ -59,8 +59,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Deploying configuration files"
-cp -rf "$DOTCFG/.config" ~/
-cp -rf "$DOTCFG/.vnc" ~/
+cp -rf "$DOTCFG"/* ~/
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
@@ -78,7 +77,7 @@ EOF
 # ---------- Termux Auto-login Setup ----------
 configure_autologin() {
     info "Installing .bashrc for auto Arch login"
-    cp -f "$DOTCFG_DIR/.bashrc" ~/.bashrc
+    cp -f "$SCRIPT_DIR/.bashrc" ~/.bashrc
     info ".bashrc deployed"
 }
 
