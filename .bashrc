@@ -1,8 +1,5 @@
-cat > ~/.bash_profile <<'EOF'
-if [ -z "$PROOT_DISTRO_RUNNING" ]; then
+# ~/.bashrc — auto‑login to Arch on first Termux launch
+if [[ -z "$PROOT_DISTRO_RUNNING" && "$SHLVL" -eq 1 ]]; then
     proot-distro login archlinux
     exit
 fi
-EOF
-
-sed -i '/proot-distro login archlinux/d' ~/.bashrc
