@@ -1,5 +1,5 @@
-# ~/.bashrc — auto‑login to Arch on first Termux launch
-if [[ -z "$PROOT_DISTRO_RUNNING" && "$SHLVL" -eq 1 ]]; then
+# ~/.bashrc — auto-login to Arch on first Termux launch
+if [[ "$PREFIX" == /data/data/com.termux/files/usr && -z "$PROOT_DISTRO_RUNNING" ]]; then
     proot-distro login archlinux
     exit
 fi
