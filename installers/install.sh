@@ -78,7 +78,7 @@ EOF
 # ---------- Termux Auto-login Setup ----------
 configure_autologin() {
     info "Installing .bashrc for auto Arch login"
-    cp -f "$DOTCFG/.bashrc" ~/.bashrc
+    cp -f "$DOTCFG_DIR/.bashrc" ~/.bashrc
     info ".bashrc deployed"
 }
 
