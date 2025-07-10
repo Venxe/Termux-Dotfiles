@@ -3,6 +3,7 @@ xfce4-goodies
 tigervnc
 fish
 starship
+fastfetch
 htop
 neovim
 cmatrix
