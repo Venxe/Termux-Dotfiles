@@ -59,7 +59,8 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 info "Deploying configuration files"
-cp -rf "$DOTCFG"/* ~/
+cd "$DOTCFG"
+cp -a . ~/
 chmod +x ~/.vnc/xstartup
 
 info "Changing default shell to fish"
