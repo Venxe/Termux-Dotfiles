@@ -6,6 +6,7 @@ starship
 fastfetch
 htop
 neovim
+firefox
 cmatrix
 lolcat
 asciiquarium
