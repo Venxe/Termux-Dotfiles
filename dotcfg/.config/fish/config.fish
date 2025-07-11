@@ -6,6 +6,10 @@ set -x LIBGL_ALWAYS_SOFTWARE 1
 
 clear
 
+if test "$DISPLAY" = ":1"
+    nohup xfwm4 --compositor=off --replace >/dev/null 2>&1 &
+end
+
 if status is-interactive
     starship init fish | source
 end
