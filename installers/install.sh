@@ -56,6 +56,7 @@ mapfile -t PACKAGES < <(grep -vE '^\s*(#|$)' "$PKG_LIST")
 info "Installing packages from list"
 for pkg in "${PACKAGES[@]}"; do
     pacman -S --noconfirm --needed "$pkg"
+    pacman -R xfce4-power-manager
 done
 
 info "Deploying configuration files"
