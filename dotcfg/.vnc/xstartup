@@ -3,14 +3,7 @@ export DISPLAY=:1
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 
-eval "$(dbus-launch --sh-syntax --exit-with-session)"
-export DBUS_SESSION_BUS_ADDRESS
-export DBUS_SESSION_BUS_PID
-
 [ -f "$HOME/.Xresources" ] && xrdb "$HOME/.Xresources"
 xset s off -dpms
 
-/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
-
-xfwm4 --compositor=off --replace &
 startxfce4 &
