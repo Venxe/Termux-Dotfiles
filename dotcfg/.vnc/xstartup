@@ -9,5 +9,8 @@ export DBUS_SESSION_BUS_PID
 
 [ -f "$HOME/.Xresources" ] && xrdb "$HOME/.Xresources"
 xset s off -dpms
-xfwm4 --replace --compositor=off &
+
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+
+xfwm4 --compositor=off --replace &
 startxfce4 &
