@@ -2,5 +2,12 @@
 export DISPLAY=:1
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
-[ -f "$HOME/.Xresources" ] && xrdb $HOME/.Xresources
-dbus-launch --exit-with-session xfce4-session &
+
+eval "$(dbus-launch --sh-syntax --exit-with-session)"
+export DBUS_SESSION_BUS_ADDRESS
+export DBUS_SESSION_BUS_PID
+
+[ -f "$HOME/.Xresources" ] && xrdb "$HOME/.Xresources"
+xset s off -dpms
+xfwm4 --replace --compositor=off &
+startxfce4 &
